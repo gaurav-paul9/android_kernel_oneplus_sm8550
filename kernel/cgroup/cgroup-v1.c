@@ -537,10 +537,15 @@ static ssize_t __cgroup1_procs_write(struct kernfs_open_file *of,
 		if (kp_active_mode() != 1) {
 			extern void cpu_boost_max(unsigned int duration_ms);
 			extern void cpu_boost_kick(unsigned int duration_ms);
-			if (kp_active_mode() == 3)
+			extern void qcom_dcvs_bus_boost_kick_max(unsigned int duration_ms);
+			extern void qcom_dcvs_bus_boost_kick(unsigned int duration_ms);
+			if (kp_active_mode() == 3) {
+				qcom_dcvs_bus_boost_kick_max(500);
 				cpu_boost_max(250);
-			else
+			} else {
+				qcom_dcvs_bus_boost_kick(300);
 				cpu_boost_kick(200);
+			}
 		}
 	}
 

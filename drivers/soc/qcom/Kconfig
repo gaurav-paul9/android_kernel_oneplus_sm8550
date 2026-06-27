@@ -601,6 +601,15 @@ config QCOM_SOCINFO_DT
 	 user space. The driver gets the soc information from device tree.
 	 If unsure, say no.
 
+config QCOM_DCVS_BOOST_API
+	bool "QCOM DCVS boost API bridge"
+	depends on QCOM_DCVS
+	default y if QCOM_DCVS_BOOST
+	help
+	  Build the public qcom_dcvs_bus_boost_kick*() bridge into vmlinux
+	  so built-in code can call it even when the DCVS boost provider is
+	  a module. Calls are no-ops until a provider registers.
+
 source "drivers/soc/qcom/dcvs/Kconfig"
 
 config QTI_RIMPS_LOG

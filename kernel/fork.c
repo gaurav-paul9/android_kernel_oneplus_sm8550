@@ -2721,15 +2721,19 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 	    (args->pidfd == args->parent_tid))
 		return -EINVAL;
 
-	/* Boost CPUs when userspace launches an app */
+	/* Boost CPUs and DCVS when userspace launches an app */
 	if (task_is_zygote(current) && IS_ENABLED(CONFIG_KPROFILES)) {
 		extern int kp_active_mode(void);
 		if (kp_active_mode() != 1) {
 			if (kp_active_mode() == 3) {
 				extern void cpu_boost_max(unsigned int duration_ms);
+				extern void qcom_dcvs_bus_boost_kick_max(unsigned int duration_ms);
+				qcom_dcvs_bus_boost_kick_max(50);
 				cpu_boost_max(50);
 			} else {
 				extern void cpu_boost_kick(unsigned int duration_ms);
+				extern void qcom_dcvs_bus_boost_kick(unsigned int duration_ms);
+				qcom_dcvs_bus_boost_kick(25);
 				cpu_boost_kick(25);
 			}
 		}
