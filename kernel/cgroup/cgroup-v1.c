@@ -529,6 +529,21 @@ static ssize_t __cgroup1_procs_write(struct kernfs_open_file *of,
 	ret = cgroup_attach_task(cgrp, task, threadgroup);
 	trace_android_vh_cgroup_set_task(ret, task);
 
+	/* Boost for app launches and app transitions */
+	if (!ret && !threadgroup &&
+		!memcmp(of->kn->parent->name, "top-app", sizeof("top-app")) &&
+		task_is_zygote(task->parent) && IS_ENABLED(CONFIG_KPROFILES)) {
+		extern int kp_active_mode(void);
+		if (kp_active_mode() != 1) {
+			extern void cpu_boost_max(unsigned int duration_ms);
+			extern void cpu_boost_kick(unsigned int duration_ms);
+			if (kp_active_mode() == 3)
+				cpu_boost_max(250);
+			else
+				cpu_boost_kick(200);
+		}
+	}
+
 out_finish:
 	cgroup_procs_write_finish(task, locked);
 out_unlock:

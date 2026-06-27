@@ -253,6 +253,41 @@ config CPUFREQ_VM
 
 	  If in doubt, say N
 
+config CPU_BOOSTING
+	bool "CPU frequency boost helper"
+	depends on CPU_FREQ && PM
+	help
+	  A simple driver for kernelspace cpufreq policy boosting
+
+menu "CPU Boosting presets"
+    depends on CPU_BOOSTING
+
+config CPU_BOOST_KICK_KHZ_LITTLE
+    int "Preset min freq for policy0 cluster (KHz)"
+    default 0
+    help
+      Minimum KHz for policy0 (CPUs 0-2); 0 disables for this tier.
+
+config CPU_BOOST_KICK_KHZ_MID
+    int "Preset min freq for policy2 cluster (KHz) [unused]"
+    default 0
+    help
+      Unused on SM8550 — CPUs 0-2 are combined under LITTLE/policy0.
+      Retained for other SoC layouts.
+
+config CPU_BOOST_KICK_KHZ_BIG
+    int "Preset min freq for policy3 cluster (KHz)"
+    default 0
+    help
+      Minimum KHz for policy3 (CPUs 3-6); 0 disables for this tier.
+
+config CPU_BOOST_KICK_KHZ_PRIME
+    int "Preset min freq for policy7 cluster (KHz)"
+    default 0
+    help
+      Minimum KHz for policy7 (CPU 7); 0 disables for this tier.
+endmenu
+
 if X86
 source "drivers/cpufreq/Kconfig.x86"
 endif

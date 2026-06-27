@@ -84,6 +84,11 @@ static int bprm_creds_from_file(struct linux_binprm *bprm);
 
 int suid_dumpable = 0;
 
+bool task_is_zygote(struct task_struct *p)
+{
+	return !memcmp(p->comm, "zygote", 6);
+}
+
 static LIST_HEAD(formats);
 static DEFINE_RWLOCK(binfmt_lock);
 

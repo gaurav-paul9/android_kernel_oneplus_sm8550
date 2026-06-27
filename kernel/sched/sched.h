@@ -639,7 +639,7 @@ static inline int rt_bandwidth_enabled(void)
 }
 
 /* RT IPI pull logic requires IRQ_WORK */
-#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_SMP)
+#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT)
 # define HAVE_RT_PUSH_IPI
 #endif
 
