@@ -38,4 +38,13 @@ config SCHED_CONSERVATIVE_BOOST_LPM_BIAS
 	  modes on a cpu if conservative boost is active. The cpu
 	  will not enter low power mode for a hysteresis time period,
 	  which can be configured from userspace.
+
+config OPLUS_FEATURE_WINDOW_POLICY
+	bool "OPlus background window policy"
+	depends on SCHED_WALT
+	default n
+	help
+	  Use average demand (WINDOW_STATS_AVG) instead of the global
+	  window stats policy for background app (BGAPP) tasks. Also
+	  skip early-detection boosting for BGAPP tasks.
 endmenu

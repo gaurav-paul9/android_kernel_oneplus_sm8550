@@ -471,10 +471,36 @@ static inline bool is_ed_enabled(void)
 	return (boost_policy != SCHED_BOOST_NONE);
 }
 
+#ifdef CONFIG_OPLUS_FEATURE_WINDOW_POLICY
+#define BGAPP  3
+
+static int get_task_group(struct task_struct *p)
+{
+	struct cgroup_subsys_state *css;
+
+	if (p == NULL)
+		return -1;
+
+	rcu_read_lock();
+	css = task_css(p, cpu_cgrp_id);
+	if (!css) {
+		rcu_read_unlock();
+		return -1;
+	}
+	rcu_read_unlock();
+
+	return css->id;
+}
+#endif
+
 static inline bool is_ed_task(struct task_struct *p, u64 wallclock)
 {
 	struct walt_task_struct *wts = (struct walt_task_struct *) p->android_vendor_data1;
 
+#ifdef CONFIG_OPLUS_FEATURE_WINDOW_POLICY
+	if (BGAPP == get_task_group(p))
+		return false;
+#endif
 	return (wallclock - wts->last_wake_ts >= EARLY_DETECTION_DURATION);
 }
 
@@ -2014,6 +2040,27 @@ static void update_history(struct rq *rq, struct task_struct *p,
 
 	wts->sum = 0;
 
+#ifdef CONFIG_OPLUS_FEATURE_WINDOW_POLICY
+	{
+		unsigned int window_policy = sysctl_sched_window_stats_policy;
+		int cgroup_id = get_task_group(p);
+
+		if (cgroup_id == BGAPP)
+			window_policy = WINDOW_STATS_AVG;
+
+		if (window_policy == WINDOW_STATS_RECENT) {
+			demand = runtime;
+		} else if (window_policy == WINDOW_STATS_MAX) {
+			demand = max;
+		} else {
+			avg = div64_u64(sum, RAVG_HIST_SIZE);
+			if (window_policy == WINDOW_STATS_AVG)
+				demand = avg;
+			else
+				demand = max(avg, runtime);
+		}
+	}
+#else
 	if (sysctl_sched_window_stats_policy == WINDOW_STATS_RECENT) {
 		demand = runtime;
 	} else if (sysctl_sched_window_stats_policy == WINDOW_STATS_MAX) {
@@ -2025,6 +2072,7 @@ static void update_history(struct rq *rq, struct task_struct *p,
 		else
 			demand = max(avg, runtime);
 	}
+#endif
 	pred_demand_scaled = predict_and_update_buckets(p, runtime_scaled);
 	demand_scaled = scale_time_to_util(demand);
 
