@@ -80,6 +80,7 @@ unsigned int sysctl_sched_long_running_rt_task_ms;
 unsigned int sysctl_sched_idle_enough;
 unsigned int sysctl_sched_cluster_util_thres_pct;
 unsigned int sysctl_ed_boost_pct;
+unsigned int sysctl_iowait_boost_pct;
 unsigned int sysctl_em_inflate_pct = 100;
 unsigned int sysctl_em_inflate_thres = 1024;
 unsigned int sysctl_sched_heavy_nr;
@@ -1028,6 +1029,15 @@ struct ctl_table walt_table[] = {
 	{
 		.procname	= "sched_ed_boost",
 		.data		= &sysctl_ed_boost_pct,
+		.maxlen		= sizeof(unsigned int),
+		.mode		= 0644,
+		.proc_handler	= proc_douintvec_minmax,
+		.extra1		= SYSCTL_ZERO,
+		.extra2		= &one_hundred,
+	},
+	{
+		.procname	= "sched_iowait_boost",
+		.data		= &sysctl_iowait_boost_pct,
 		.maxlen		= sizeof(unsigned int),
 		.mode		= 0644,
 		.proc_handler	= proc_douintvec_minmax,

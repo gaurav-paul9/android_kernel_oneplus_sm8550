@@ -18,6 +18,8 @@
 #include "walt.h"
 #include "trace.h"
 
+#define IOWAIT_BOOST_PCT_DEFAULT 25
+
 struct waltgov_tunables {
 	struct gov_attr_set	attr_set;
 	unsigned int		up_rate_limit_us;
@@ -388,6 +390,15 @@ static unsigned int waltgov_next_freq_shared(struct waltgov_cpu *wg_cpu, u64 tim
 		if (boost) {
 			j_util = mult_frac(j_util, boost + 100, 100);
 			j_nl = mult_frac(j_nl, boost + 100, 100);
+		}
+
+		if (IS_ENABLED(CONFIG_SCHED_WALT) && sysctl_iowait_boost_pct) {
+			struct walt_task_struct *wts__;
+			wts__ = (struct walt_task_struct *)cpu_rq(j)->curr->android_vendor_data1;
+			if (wts__ && wts__->iowaited)
+				j_util = mult_frac(j_util,
+						   100 + sysctl_iowait_boost_pct,
+						   100);
 		}
 
 		if (j_util * max >= j_max * util) {
