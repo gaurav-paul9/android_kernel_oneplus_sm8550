@@ -13,6 +13,7 @@
 #include <linux/kthread.h>
 #include <trace/events/power.h>
 #include <linux/cpufreq_bouncing.h>
+#include <linux/cpufreq_effiency.h>
 
 #include "walt.h"
 #include "trace.h"
@@ -399,6 +400,10 @@ static unsigned int waltgov_next_freq_shared(struct waltgov_cpu *wg_cpu, u64 tim
 	}
 
 	next_f = get_next_freq(wg_policy, util, max, wg_cpu, time);
+
+	if (IS_ENABLED(CONFIG_OPLUS_FEATURE_SUGOV_POWER_EFFIENCY))
+		next_f = update_power_effiency_lock(policy, next_f,
+				map_util_freq(util, policy->max, max));
 
 	if (IS_ENABLED(CONFIG_OPLUS_FEATURE_GKI_CPUFREQ_BOUNCING))
 		next_f = cb_cap(policy, next_f);
@@ -1037,6 +1042,9 @@ static int waltgov_init(struct cpufreq_policy *policy)
 
 	if (IS_ENABLED(CONFIG_OPLUS_FEATURE_GKI_CPUFREQ_BOUNCING))
 		cb_stuff_init(policy);
+
+	if (IS_ENABLED(CONFIG_OPLUS_FEATURE_SUGOV_POWER_EFFIENCY))
+		frequence_opp_init(policy);
 
 	return 0;
 
