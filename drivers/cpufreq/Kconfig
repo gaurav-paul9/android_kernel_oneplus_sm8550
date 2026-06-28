@@ -348,4 +348,18 @@ config QORIQ_CPUFREQ
 	  which are capable of changing the CPU's frequency dynamically.
 
 endif
+
+config OPLUS_FEATURE_GKI_CPUFREQ_BOUNCING
+	tristate "cpufreq_bouncing"
+	default n
+	help
+	  adjust cpu max frequency based on cpu busy duration
+
+config OPLUS_FEATURE_SUGOV_POWER_EFFIENCY
+	tristate "power domain effiency"
+	default n
+	help
+	  Select Left or right frequence point as target frequence base
+	  on powerdomain and current frequence value
+
 endmenu

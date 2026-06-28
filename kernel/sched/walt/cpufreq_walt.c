@@ -12,6 +12,7 @@
 
 #include <linux/kthread.h>
 #include <trace/events/power.h>
+#include <linux/cpufreq_bouncing.h>
 
 #include "walt.h"
 #include "trace.h"
@@ -366,7 +367,7 @@ static unsigned int waltgov_next_freq_shared(struct waltgov_cpu *wg_cpu, u64 tim
 	struct waltgov_policy *wg_policy = wg_cpu->wg_policy;
 	struct cpufreq_policy *policy = wg_policy->policy;
 	unsigned long util = 0, max = 1;
-	unsigned int j;
+	unsigned int j, next_f;
 	int boost = wg_policy->tunables->boost;
 
 	for_each_cpu(j, policy->cpus) {
@@ -397,7 +398,12 @@ static unsigned int waltgov_next_freq_shared(struct waltgov_cpu *wg_cpu, u64 tim
 		waltgov_walt_adjust(j_wg_cpu, j_util, j_nl, &util, &max);
 	}
 
-	return get_next_freq(wg_policy, util, max, wg_cpu, time);
+	next_f = get_next_freq(wg_policy, util, max, wg_cpu, time);
+
+	if (IS_ENABLED(CONFIG_OPLUS_FEATURE_GKI_CPUFREQ_BOUNCING))
+		next_f = cb_cap(policy, next_f);
+
+	return next_f;
 }
 
 static void waltgov_update_freq(struct waltgov_callback *cb, u64 time,
@@ -1028,6 +1034,9 @@ static int waltgov_init(struct cpufreq_policy *policy)
 				   walt_gov.name);
 	if (ret)
 		goto fail;
+
+	if (IS_ENABLED(CONFIG_OPLUS_FEATURE_GKI_CPUFREQ_BOUNCING))
+		cb_stuff_init(policy);
 
 	return 0;
 
