@@ -4999,7 +4999,7 @@ retry:
 		unreserve_highatomic_pageblock(ac, false);
 		trace_android_vh_drain_all_pages_bypass(gfp_mask, order,
 			alloc_flags, ac->migratetype, *did_some_progress, &skip_pcp_drain);
-		if (!skip_pcp_drain)
+		if (!skip_pcp_drain && !task_is_critical())
 			drain_all_pages(NULL);
 		drained = true;
 		goto retry;

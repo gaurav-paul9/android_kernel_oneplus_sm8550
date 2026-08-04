@@ -923,7 +923,7 @@ unsigned long shrink_slab(gfp_t gfp_mask, int nid,
 	bool bypass = false;
 
 	trace_android_vh_shrink_slab_bypass(gfp_mask, nid, memcg, priority, &bypass);
-	if (bypass)
+	if (bypass || task_is_critical())
 		return 0;
 
 	/*
