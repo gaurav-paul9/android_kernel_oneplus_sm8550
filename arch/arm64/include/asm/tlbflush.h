@@ -15,6 +15,8 @@
 #include <linux/sched.h>
 #include <asm/cputype.h>
 #include <asm/mmu.h>
+#include <asm/pgtable-hwdef.h>
+#include <asm/pgtable-types.h>
 
 /*
  * Raw TLBI operations.
@@ -426,6 +428,33 @@ static inline void __flush_tlb_kernel_pgtable(unsigned long kaddr)
 	__tlbi_sync_s1ish();
 	isb();
 }
+
+static inline bool __pte_flags_need_flush(pteval_t oldval, pteval_t newval)
+{
+	pteval_t diff = oldval ^ newval;
+
+	/* invalid to valid transition requires no flush */
+	if (!(oldval & PTE_VALID))
+		return false;
+
+	/* Transition in the SW bits requires no flush */
+	diff &= ~PTE_SWBITS_MASK;
+
+	return diff;
+}
+
+static inline bool pte_needs_flush(pte_t oldpte, pte_t newpte)
+{
+	return __pte_flags_need_flush(pte_val(oldpte), pte_val(newpte));
+}
+#define pte_needs_flush pte_needs_flush
+
+static inline bool huge_pmd_needs_flush(pmd_t oldpmd, pmd_t newpmd)
+{
+	return __pte_flags_need_flush(pmd_val(oldpmd), pmd_val(newpmd));
+}
+#define huge_pmd_needs_flush huge_pmd_needs_flush
+
 #endif
 
 #endif

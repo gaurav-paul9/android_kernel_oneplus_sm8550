@@ -6,6 +6,7 @@
 #define __ASM_PGTABLE_HWDEF_H
 
 #include <asm/memory.h>
+#include <linux/bits.h>
 
 /*
  * Number of page-table levels required to address 'va_bits' wide
@@ -154,6 +155,9 @@
 #define PTE_CONT		(_AT(pteval_t, 1) << 52)	/* Contiguous range */
 #define PTE_PXN			(_AT(pteval_t, 1) << 53)	/* Privileged XN */
 #define PTE_UXN			(_AT(pteval_t, 1) << 54)	/* User XN */
+
+/* Software bits in page table entries (bits 55-58) */
+#define PTE_SWBITS_MASK		_AT(pteval_t, GENMASK(58, 55))
 
 #define PTE_ADDR_LOW		(((_AT(pteval_t, 1) << (48 - PAGE_SHIFT)) - 1) << PAGE_SHIFT)
 #ifdef CONFIG_ARM64_PA_BITS_52
