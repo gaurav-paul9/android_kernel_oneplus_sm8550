@@ -11163,7 +11163,14 @@ static int sched_balance_newidle(struct rq *this_rq, struct rq_flags *rf)
 	u64 curr_cost = 0;
 	int done = 0;
 
-	trace_android_rvh_sched_newidle_balance(this_rq, rf, &pulled_task, &done);
+	/*
+	 * A remotely queued wakeup will provide work for this CPU. Do not let
+	 * a vendor newidle hook pull another task before that wakeup is
+	 * enqueued.
+	 */
+	if (!READ_ONCE(this_rq->ttwu_pending))
+		trace_android_rvh_sched_newidle_balance(this_rq, rf,
+						       &pulled_task, &done);
 	if (done)
 		return pulled_task;
 
@@ -11173,7 +11180,7 @@ static int sched_balance_newidle(struct rq *this_rq, struct rq_flags *rf)
 	 * There is a task waiting to run. No need to search for one.
 	 * Return 0; the task will be enqueued when switching to idle.
 	 */
-	if (this_rq->ttwu_pending)
+	if (READ_ONCE(this_rq->ttwu_pending))
 		return 0;
 
 	/*
