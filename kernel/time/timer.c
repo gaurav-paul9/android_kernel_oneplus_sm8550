@@ -1809,7 +1809,7 @@ static void run_local_timers(void)
 		if (time_before(jiffies, base->next_expiry))
 			return;
 	}
-	raise_softirq(TIMER_SOFTIRQ);
+	__raise_softirq_irqoff(TIMER_SOFTIRQ);
 }
 
 /*
