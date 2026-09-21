@@ -1926,10 +1926,10 @@ out_unlock:
 		__mod_lruvec_page_state(new_page, NR_FILE_THPS, nr);
 		filemap_nr_thps_inc(mapping);
 		/*
-		 * Paired with smp_mb() in do_dentry_open() to ensure
-		 * i_writecount is up to date and the update to nr_thps is
-		 * visible. Ensures the page cache will be truncated if the
-		 * file is opened writable.
+		 * Paired with the fence in do_dentry_open() ->
+		 * get_write_access() to ensure i_writecount is up to date
+		 * and the update to nr_thps is visible. Ensures the page
+		 * cache will be truncated if the file is opened writable.
 		 */
 		smp_mb();
 		if (inode_is_open_for_write(mapping->host)) {

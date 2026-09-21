@@ -231,22 +231,28 @@ static inline bool lru_gen_add_page(struct lruvec *lruvec, struct page *page, bo
 	if (PageUnevictable(page) || !lrugen->enabled)
 		return false;
 	/*
-	 * There are three common cases for this page:
-	 * 1. If it's hot, e.g., freshly faulted in or previously hot and
-	 *    migrated, add it to the youngest generation.
-	 * 2. If it's cold but can't be evicted immediately, i.e., an anon page
-	 *    not in swapcache or a dirty page pending writeback, add it to the
-	 *    second oldest generation.
-	 * 3. Everything else (clean, cold) is added to the oldest generation.
+	 * There are four common cases for this page:
+	 * 1. If it's hot, i.e. freshly faulted in, add it to the youngest
+	 *    generation so it is protected over the cases below.
+	 * 2. If it cannot be evicted immediately, e.g. a dirty page pending
+	 *    writeback, add it to the second youngest generation.
+	 * 3. If it should be evicted first, e.g. cold and clean from
+	 *    rotate_reclaimable_page(), add it to the oldest generation.
+	 * 4. Put other inactive pages in the second oldest generation when
+	 *    enough generations exist, giving file-descriptor accesses time
+	 *    to influence the refault controller.
 	 */
 	if (PageActive(page))
 		seq = lrugen->max_seq;
 	else if ((type == LRU_GEN_ANON && !PageSwapCache(page)) ||
 		 (PageReclaim(page) &&
 		  (PageDirty(page) || PageWriteback(page))))
-		seq = lrugen->min_seq[type] + 1;
-	else
+		seq = lrugen->max_seq - 1;
+	else if (reclaiming ||
+		 lrugen->min_seq[type] + MIN_NR_GENS >= lrugen->max_seq)
 		seq = lrugen->min_seq[type];
+	else
+		seq = lrugen->min_seq[type] + 1;
 
 	gen = lru_gen_from_seq(seq);
 	flags = (gen + 1UL) << LRU_GEN_PGOFF;
