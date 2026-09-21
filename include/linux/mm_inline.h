@@ -96,6 +96,13 @@ static __always_inline enum lru_list page_lru(struct page *page)
 
 #ifdef CONFIG_LRU_GEN
 
+static inline bool lru_gen_switching(void)
+{
+	DECLARE_STATIC_KEY_FALSE(lru_switch);
+
+	return static_branch_unlikely(&lru_switch);
+}
+
 #ifdef CONFIG_LRU_GEN_ENABLED
 static inline bool lru_gen_enabled(void)
 {
@@ -299,6 +306,11 @@ static inline bool lru_gen_del_page(struct lruvec *lruvec, struct page *page, bo
 #else /* !CONFIG_LRU_GEN */
 
 static inline bool lru_gen_enabled(void)
+{
+	return false;
+}
+
+static inline bool lru_gen_switching(void)
 {
 	return false;
 }
