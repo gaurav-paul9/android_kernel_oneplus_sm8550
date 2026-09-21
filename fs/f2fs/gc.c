@@ -129,8 +129,11 @@ do_gc:
 			sync_mode = false;
 
 		/* if return value is not zero, no victim was selected */
-		if (f2fs_gc(sbi, sync_mode, !foreground, false, NULL_SEGNO))
-			wait_ms = gc_th->no_gc_sleep_time;
+		if (f2fs_gc(sbi, sync_mode, !foreground, false, NULL_SEGNO)) {
+			/* don't bother wait_ms by foreground gc */
+			if (!foreground)
+				wait_ms = gc_th->no_gc_sleep_time;
+		}
 
 		if (foreground)
 			wake_up_all(&gc_th->fggc_wq);
