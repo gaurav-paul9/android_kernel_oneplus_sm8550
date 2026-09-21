@@ -11231,10 +11231,28 @@ static int sched_balance_newidle(struct rq *this_rq, struct rq_flags *rf)
 						   &continue_balancing);
 
 			domain_cost = sched_clock_cpu(this_cpu) - t0;
-			if (domain_cost > sd->max_newidle_lb_cost)
-				sd->max_newidle_lb_cost = domain_cost;
 
 			curr_cost += domain_cost;
+
+			/*
+			 * Failing newidle means it is not effective;
+			 * bump the cost so we end up doing less of it.
+			 */
+			if (!pulled_task)
+				domain_cost = (3 * sd->max_newidle_lb_cost) / 2;
+
+			/*
+			 * Track max cost of a domain to make sure to not delay
+			 * the next wakeup on the CPU.
+			 *
+			 * The cost is bumped whenever newidle balance fails, and
+			 * we don't want things to grow out of control.  Use the
+			 * sysctl_sched_migration_cost as the upper limit, plus a
+			 * little extra to avoid off by ones.
+			 */
+			if (domain_cost > sd->max_newidle_lb_cost)
+				sd->max_newidle_lb_cost = min(domain_cost,
+					(u64)sysctl_sched_migration_cost + 200);
 		}
 
 		update_next_balance(sd, &next_balance);
