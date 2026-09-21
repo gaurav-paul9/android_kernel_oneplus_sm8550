@@ -4136,6 +4136,7 @@ static bool try_to_inc_min_seq(struct lruvec *lruvec, bool can_swap)
 {
 	int gen, type, zone;
 	bool success = false;
+	bool advanced = false;
 	struct lru_gen_struct *lrugen = &lruvec->lrugen;
 	DEFINE_MIN_SEQ(lruvec);
 
@@ -4152,10 +4153,14 @@ static bool try_to_inc_min_seq(struct lruvec *lruvec, bool can_swap)
 			}
 
 			min_seq[type]++;
+			advanced = true;
 		}
 next:
 		;
 	}
+
+	if (!advanced)
+		return false;
 
 	/* see the comment on lru_gen_struct */
 	if (can_swap) {
