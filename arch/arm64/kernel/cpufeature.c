@@ -958,6 +958,33 @@ static void init_32bit_cpu_features(struct cpuinfo_32bit *info)
 	init_cpu_ftr_reg(SYS_MVFR2_EL1, info->reg_mvfr2);
 }
 
+bool gmid_el1_accessible(const struct cpuinfo_arm64 *info)
+{
+	const struct arm64_ftr_bits *ftrp;
+	s64 mte, ovr;
+	u64 ftr_mask;
+
+	/* No ID register reflects CONFIG_ARM64_MTE. */
+	if (!IS_ENABLED(CONFIG_ARM64_MTE))
+		return false;
+
+	for (ftrp = ftr_id_aa64pfr1; ftrp->width; ftrp++) {
+		if (ftrp->shift == ID_AA64PFR1_MTE_SHIFT)
+			break;
+	}
+
+	ftr_mask = arm64_ftr_mask(ftrp);
+	mte = arm64_ftr_value(ftrp, info->reg_id_aa64pfr1);
+
+	/* The boot CPU runs before init_cpu_ftr_reg() strips unsafe overrides. */
+	if ((id_aa64pfr1_override.mask & ftr_mask) == ftr_mask) {
+		ovr = arm64_ftr_value(ftrp, id_aa64pfr1_override.val);
+		mte = arm64_ftr_safe_value(ftrp, ovr, mte);
+	}
+
+	return mte >= ID_AA64PFR1_MTE;
+}
+
 void __init init_cpu_features(struct cpuinfo_arm64 *info)
 {
 	/* Before we start using the tables, make sure it is sorted */
@@ -986,7 +1013,7 @@ void __init init_cpu_features(struct cpuinfo_arm64 *info)
 		sve_init_vq_map();
 	}
 
-	if (id_aa64pfr1_mte(info->reg_id_aa64pfr1))
+	if (gmid_el1_accessible(info))
 		init_cpu_ftr_reg(SYS_GMID_EL1, info->reg_gmid);
 
 	/*
@@ -1227,11 +1254,9 @@ void update_cpu_features(int cpu,
 	 * they read/write depends on the GMID_EL1.BS field. Check that the
 	 * value is the same on all CPUs.
 	 */
-	if (IS_ENABLED(CONFIG_ARM64_MTE) &&
-	    id_aa64pfr1_mte(info->reg_id_aa64pfr1)) {
+	if (gmid_el1_accessible(info))
 		taint |= check_update_ftr_reg(SYS_GMID_EL1, cpu,
 					      info->reg_gmid, boot->reg_gmid);
-	}
 
 	/*
 	 * If we don't have AArch32 at all then skip the checks entirely
