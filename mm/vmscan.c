@@ -4598,15 +4598,9 @@ static bool sort_page(struct lruvec *lruvec, struct page *page, struct scan_cont
 
 	VM_WARN_ON_ONCE_PAGE(gen >= MAX_NR_GENS, page);
 
-	/* unevictable */
-	if (!page_evictable(page)) {
-		success = lru_gen_del_page(lruvec, page, true);
-		VM_WARN_ON_ONCE_PAGE(!success, page);
-		SetPageUnevictable(page);
-		add_page_to_lru_list(page, lruvec);
-		__count_vm_events(UNEVICTABLE_PGCULLED, delta);
-		return true;
-	}
+	/* unevictable: let it through and the generic path will cull it */
+	if (!page_evictable(page))
+		return false;
 
 	/* dirty lazyfree */
 	if (type == LRU_GEN_FILE && PageAnon(page) && PageDirty(page)) {
@@ -4900,11 +4894,9 @@ retry:
 		if (bypass)
 			continue;
 
-		if (!page_evictable(page)) {
-			list_del(&page->lru);
-			putback_lru_page(page);
+		/* move_pages_to_lru() culls unevictable pages via putback_lru_page() */
+		if (!page_evictable(page))
 			continue;
-		}
 
 		if (PageReclaim(page) &&
 		    (PageDirty(page) || PageWriteback(page))) {
